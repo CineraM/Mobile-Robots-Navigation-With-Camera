@@ -96,7 +96,6 @@ pi = math.pi
 half_of_robot = 0.037*39.3701 
 
 
-
 # set speed to motors
 def setSpeedIPS(vl, vr):
     vl /= w_r
@@ -128,17 +127,13 @@ def rotationInPlace(direction, angle, v):
         else:
             setSpeedIPS(v, -v)
 
+def distToObject():
+    return camera.getRecognitionObjects()[0].getPosition()[0] * 39.3701
+
 def motionToGoal(goal_dist):
     obj_in_view = len(camera.getRecognitionObjects())
-
-    if (obj_in_view > 0): #
+    if (obj_in_view > 0): 
         pos_image = camera.getRecognitionObjects()[0].getPositionOnImage()[0]
-        # pos_view = camera.getRecognitionObjects()[0].getPosition()[0] 
-
-        # debug
-        print("Position in Image:\t", pos_image) # in pixels relative to image
-        # print("\tPosition in View:\t", pos_view) # in meters relative to camera
-        
         # rotate to look at the object
         if pos_image < 38:
             rotationInPlace('left', pi/60, 0.9)
@@ -146,17 +141,15 @@ def motionToGoal(goal_dist):
         elif pos_image > 42:    
             rotationInPlace('right', pi/60, 0.9)
             return
-
         # pid logic
-        distance = frontDistanceSensor.getValue()*39.3701
-        error = distance - goal_dist
-        v = (2*error)
+        # print(f'dist sensor: {lidar.getRangeImage()[0]*39.3701}, camera: {distToObject()}') # debug
+        error = distToObject() - goal_dist
+        v = (2*error) # 2 == kp value
         v = v_saturation(v, 5.024)
         if abs(error) < 0.1:    # stop motors if 0.1in awa from goal
             setSpeedIPS(0, 0)
         else:
             setSpeedIPS(v, v)
-
     else:
         rotationInPlace('left', pi/4, 3)
 
@@ -167,3 +160,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# 1.78
