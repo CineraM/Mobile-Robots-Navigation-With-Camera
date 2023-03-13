@@ -220,6 +220,7 @@ rightposition_sensor.enable(timestep)
 imu = robot.getDevice('inertial unit')
 imu.enable(timestep)
 
+
 # global variables
 distBtwWhe = 2.28
 dmid = distBtwWhe/2
@@ -227,11 +228,6 @@ w_dia = 1.6
 w_r = w_dia/2
 pi = math.pi
 half_of_robot = 0.037*39.3701 
-
-# get left & right pid
-def getDistanceSensor():
-    toIn = 39.3701
-    return [leftDistanceSensor.getValue()*toIn, rightDistanceSensor.getValue()*toIn]
 
 def getLidar():
     image = lidar.getRangeImage()
@@ -261,62 +257,22 @@ def front_dist():
 
 def front_lidar():
     image = lidar.getRangeImage()
-    return image[0]*39.3701
+    return (image[0]*39.3701) - half_of_robot
 
-def printSensors():
-    pids = getDistanceSensor()
-    lids = getLidar()
-    print(f'Distance:\t\tFront: {front_dist():.2f}\tLeft: {pids[0]:.2f}\tRight: {pids[1]:.2f}\n')
-    print(f'Lidar:\t\tFront: {front_lidar():.2f}\tLeft: {lids[0]:.2f}\tRight: {lids[1]:.2f}\n')
 # assume angle is in radians
-def rotationInPlace(direction, angle, in_v):
+def rotationInPlace(direction, angle, v):
     s = angle*dmid
-    time = s/in_v
-    v = in_v/w_r # input must be less than 6.28
+    time = s/v
     s_time = robot.getTime()
     while robot.step(timestep) != -1:
-        printSensors()
         if robot.getTime()-s_time > time:
             leftMotor.setVelocity(0)
             rightMotor.setVelocity(0)
             break 
         if direction == "left":
-            leftMotor.setVelocity(-v)
-            rightMotor.setVelocity(v)
+            setSpeedIPS(-v, v)
         else:
-            leftMotor.setVelocity(v)
-            rightMotor.setVelocity(-v)
-
-def wallFollow(wall, fpid, k):
-    pids = getDistanceSensor()
-    left_pid = pids[0]
-    right_pid = pids[1]
-    
-    dist_to_wall = 3
-    v = v_saturation(fpid, 4)
-    error = (v - 2.5)  # target distance to wall = 2.5 inches
-    # error = (v - 2.5)*0.8  # target distance to wall = 2.5 inches
-    if wall == 'right':    
-        if fpid > 3:
-            if right_pid < dist_to_wall:    # too close to target wall
-                setSpeedIPS(v-abs(error)*k, v)
-            elif right_pid > dist_to_wall:  # too far to target wall
-                setSpeedIPS(v, v-abs(error)*k)
-            elif left_pid < dist_to_wall:   # too close to opposite wall
-                setSpeedIPS(v, v-abs(error)*k)
-        else:
-            setSpeedIPS(fpid, fpid)
-    elif wall == 'left':
-        if fpid > 3:
-
-            if left_pid < dist_to_wall:    # too close to target wall
-                setSpeedIPS(v, v-abs(error)*k)
-            elif left_pid > dist_to_wall:  # too far to target wall
-                setSpeedIPS(v-abs(error)*k, v)
-            elif right_pid < dist_to_wall: # too close to opposite wall
-                setSpeedIPS(v-abs(error)*k, v)
-        else:
-            setSpeedIPS(fpid, fpid)
+            setSpeedIPS(v, -v)
 
 
 def getLidarMin():
@@ -342,47 +298,45 @@ def wallFollowLidar(wall, flid, k):
 
     left_lid = lids[0]
     right_lid = lids[1]
-    dist_to_wall = 2
+    dist_to_wall = 2.5
     v = v_saturation(flid, 4)
     error = (v - 2.5)  # target distance to wall = 2.5 inches
-    # error = (v - 2.5)*0.8  # target distance to wall = 2.5 inches
+    pid = v-abs(error)*k
     if wall == 'right':    
         if flid > 3:
-            
             if right_lid < dist_to_wall:    # too close to target wall
-                setSpeedIPS(v-abs(error)*k, v)
+                setSpeedIPS(pid, v)
             elif right_lid > dist_to_wall:  # too far to target wall
-                setSpeedIPS(v, v-abs(error)*k)
+                setSpeedIPS(v, pid)
             elif left_lid < dist_to_wall:   # too close to opposite wall
-                setSpeedIPS(v, v-abs(error)*k)
+                setSpeedIPS(v, pid)
         else:
             setSpeedIPS(v, v)
     elif wall == 'left':
         if flid > 3:
             if left_lid < dist_to_wall:    # too close to target wall
-                setSpeedIPS(1.1*v, 1.1*(v-abs(error)*k))
+                setSpeedIPS(v, pid)
             elif left_lid > dist_to_wall:  # too far to target wall
-                setSpeedIPS(1.1*(v-abs(error)*k), 1.1*v)
+                setSpeedIPS(pid, v)
             elif right_lid < dist_to_wall: # too close to opposite wall
-                setSpeedIPS(1.1*(v-abs(error)*k), 1.1*v)
+                setSpeedIPS(pid, v)
         else:
-            setSpeedIPS(v*1.1, v*1.1)
+            setSpeedIPS(v, v)
 
-# Main loop:
-# perform simulation steps until Webots is stopping the controller
-kps_vals = [0.1, 0.5, 1.0, 2.0, 2.5, 5.0]
-while robot.step(timestep) != -1:
-    printSensors()
+def wallFollow():
+    kps_vals = [0.1, 0.5, 1.0, 2.0, 2.5, 5.0]
     fpid = front_dist()
-    wall = 'left'
+    wall = 'right'
     if fpid < 2.5:  # to close to wall, rotate 45 deg away from it
-        if wall == 'left':
-            rotationInPlace('right', pi/4, 0.9)
-        elif wall == 'right':
-            rotationInPlace('left', pi/4, 0.9)
+        rotationInPlace('left', pi/4, 0.9)
     else:   # else follow wall
-        # pids
-        # wallFollow(wall, fpid, kps_vals[2])
+        wallFollowLidar(wall, front_lidar(), kps_vals[2])
 
-        # lidar
-        wallFollowLidar(wall, front_lidar() - half_of_robot, kps_vals[2])
+
+def main():
+    while robot.step(timestep) != -1:
+        # wallFollow()
+        pass
+
+if __name__ == "__main__":
+    main()
