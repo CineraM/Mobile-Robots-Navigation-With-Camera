@@ -246,7 +246,7 @@ def main():
             except:pass
             wallFollow()
             # change to Motion to goal if the object is in the camera fov
-            if pos_image >= 27 and pos_image <= 53: # ideally 38 or 42
+            if pos_image >= 30 and pos_image <= 50: # ideally 38 or 42
                 print(f'Motion to Goal\t\t\tTime: {robot.getTime():.2f}')  
                 MG, WF = True, False
         elif MG:

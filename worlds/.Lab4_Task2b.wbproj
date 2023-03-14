@@ -8,4 +8,4 @@ orthographicViewHeight: 1
 textFiles: -1
 consoles: Console:All:All
 renderingDevicePerspectives: e-puck:camera;1;1;0;0
-renderingDevicePerspectives: e-puck:camera1;1;2.45;0;0
+renderingDevicePerspectives: e-puck:camera1;1;3.5625;0;0
