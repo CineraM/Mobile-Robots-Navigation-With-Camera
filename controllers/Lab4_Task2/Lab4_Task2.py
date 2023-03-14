@@ -11,18 +11,14 @@ from controller import Robot
 # import numpy as it may be used in future labs
 import numpy as np
 import math
-
-
 #######################################################
 # Creates Robot
 #######################################################
 robot = Robot()
-
 #######################################################
 # Sets the time step of the current world
 #######################################################
 timestep = int(robot.getBasicTimeStep())
-
 #######################################################
 # Gets Robots Distance Sensors
 # Documentation:
@@ -36,7 +32,6 @@ frontDistanceSensor.enable(timestep)
 leftDistanceSensor.enable(timestep)
 rightDistanceSensor.enable(timestep)
 rearDistanceSensor.enable(timestep)
-
 #######################################################
 # Gets Robots Lidar Distance Sensors
 # Documentation:
@@ -69,8 +64,6 @@ leftMotor.setPosition(float('inf'))
 rightMotor.setPosition(float('inf'))
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
-
-
 #######################################################
 # Gets Robot's the position sensors
 # Documentation:
@@ -80,7 +73,6 @@ leftposition_sensor = robot.getDevice('left wheel sensor')
 rightposition_sensor = robot.getDevice('right wheel sensor')
 leftposition_sensor.enable(timestep)
 rightposition_sensor.enable(timestep)
-
 #######################################################
 # Gets Robot's IMU sensors
 # Documentation:
@@ -88,7 +80,6 @@ rightposition_sensor.enable(timestep)
 #######################################################
 imu = robot.getDevice('inertial unit')
 imu.enable(timestep)
-
 
 # global variables
 distBtwWhe = 2.28
@@ -208,7 +199,6 @@ def distToObject():
         return 999
     
 def motionToGoal(goal_dist):
-
     pos_image = camera.getRecognitionObjects()[0].getPositionOnImage()[0]
     # rotate to look at the object
     if pos_image < 38:
@@ -226,7 +216,6 @@ def motionToGoal(goal_dist):
         setSpeedIPS(0, 0)
     else:
         setSpeedIPS(v, v)
-
 
 def findGoal():
     count=0
@@ -256,69 +245,44 @@ def main():
             try: pos_image = camera.getRecognitionObjects()[0].getPositionOnImage()[0]
             except:pass
             wallFollow()
-            # looking at the object while in a curve
-            if pos_image >= 38 and pos_image <= 42:
+            # change to Motion to goal if the object is in the camera fov
+            if pos_image >= 27 and pos_image <= 53: # ideally 38 or 42
                 print(f'Motion to Goal\t\t\tTime: {robot.getTime():.2f}')  
                 MG, WF = True, False
         elif MG:
-            if error <= 0.1: # goal found
+            if error <= 0.2: # goal found, stop the motors
                 motionToGoal(5)
                 continue
-            if front_dist <= 4 and front_dist < dist_to_goal:
-                rotationInPlace('left', pi/4, 0.9)
+            # if close to a wall, change to wall follow
+            elif front_dist <= 5.2 and front_dist < dist_to_goal: # 5.2 good value when aporaching corners
+                rotationInPlace('left', pi/4, 0.9) # half left turn
                 WF, MG = True, False
                 print(f'Following Right Wall\t\tTime: {robot.getTime():.2f}')  
             elif obj_in_view > 0:
                 motionToGoal(5)
-        else: # either find goal or wall follow
-            found = findGoal()  
-            if found:
-                MG, WF = True, False
             else:
-                # go forward until a wall is found, then wall follow
+                WF, MG = False, False
+        else: 
+            # either find goal or wall follow
+            if obj_in_view > 0: # if goal is already in view, MG
+                print(f'Motion to Goal\t\t\tTime: {robot.getTime():.2f}') 
+                MG, WF = True, False
+                continue
+
+            # else try to find goal
+            found = findGoal()  
+            print(found)
+            if found:
+                print(f'Motion to Goal\t\t\tTime: {robot.getTime():.2f}') 
+                MG, WF = True, False
+            else: # if goal was not found, go forward until the robot is close to a wall, then wall follow
                 if front_dist > 3: # wall follow
                     while frontDist() < 3:
                         setSpeedIPS(2, 2)
                     setSpeedIPS(0, 0)
 
-            print(f'Following Right Wall\t\tTime: {robot.getTime():.2f}')    
-            WF, MG = True, False                
+                print(f'Following Right Wall\t\tTime: {robot.getTime():.2f}')    
+                WF, MG = True, False                
 
 if __name__ == "__main__":
     main()
-
-
-
-# def main():
-#     WF = False
-#     while robot.step(timestep) != -1:
-#         dist_to_goal = -1
-#         front_dist = frontDist()
-#         dist_to_goal = distToObject()
-#         error = abs(front_dist - dist_to_goal) - 1.8
-#         obj_in_view = len(camera.getRecognitionObjects())
-        
-#         if WF:
-#             pos_image = -1
-#             try: pos_image = camera.getRecognitionObjects()[0].getPositionOnImage()[0]
-#             except:pass
-#             wallFollow()
-#             # looking at the object while in a curve
-#             if pos_image >= 38 and pos_image <= 42:
-#                 WF = False
-#         elif error <= 0.1: # goal found
-#             motionToGoal(5)
-#         else:
-#             if front_dist <= 4 and front_dist < dist_to_goal:
-#                 rotationInPlace('left', pi/4, 0.9)
-#                 prev_r_lid = r_lid = getLidar()[1]
-#                 WF = True
-#             elif obj_in_view > 0:
-#                 motionToGoal(5)
-#             else:
-
-#                 found = findGoal()
-#                 if found:
-#                     motionToGoal()
-#                 else:    
-#                     WF = True

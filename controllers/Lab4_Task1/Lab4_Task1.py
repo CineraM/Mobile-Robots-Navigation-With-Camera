@@ -1,21 +1,24 @@
+"""
+Matias Cinera - U 6931_8506
+CAP-6626
+Instructor: Dr.Alfredo Weitzenfeld 
+Ta:         Chance Hamilton
+Assigment:  lab4_task1 controller.
+"""
 # You may need to import some classes of the controller module. Ex:
 #  from controller import Robot, Motor, DistanceSensor
 from controller import Robot
 # import numpy as it may be used in future labs
 import numpy as np
 import math
-
 #######################################################
 # Creates Robot
 #######################################################
 robot = Robot()
-
-
 #######################################################
 # Sets the time step of the current world
 #######################################################
 timestep = int(robot.getBasicTimeStep())
-
 #######################################################
 # Gets Robots Distance Sensors
 # Documentation:
@@ -29,7 +32,6 @@ frontDistanceSensor.enable(timestep)
 leftDistanceSensor.enable(timestep)
 rightDistanceSensor.enable(timestep)
 rearDistanceSensor.enable(timestep)
-
 #######################################################
 # Gets Robots Lidar Distance Sensors
 # Documentation:
@@ -41,10 +43,6 @@ lidar_horizontal_res = lidar.getHorizontalResolution()
 lidar_num_layers = lidar.getNumberOfLayers()
 lidar_min_dist = lidar.getMinRange()
 lidar_max_dist = lidar.getMaxRange()
-
-
-print("Lidar is enabled. \nLidar has a Horizontal Resolution of: ", lidar_horizontal_res, "\nLidar Image Number of Layers: ", lidar_num_layers)
-print("Lidar Range: [",lidar_min_dist," ,", lidar_max_dist,'] in meters')
 
 #######################################################
 # Gets Robots Camera
@@ -66,8 +64,6 @@ leftMotor.setPosition(float('inf'))
 rightMotor.setPosition(float('inf'))
 leftMotor.setVelocity(0)
 rightMotor.setVelocity(0)
-
-
 #######################################################
 # Gets Robot's the position sensors
 # Documentation:
@@ -77,7 +73,6 @@ leftposition_sensor = robot.getDevice('left wheel sensor')
 rightposition_sensor = robot.getDevice('right wheel sensor')
 leftposition_sensor.enable(timestep)
 rightposition_sensor.enable(timestep)
-
 #######################################################
 # Gets Robot's IMU sensors
 # Documentation:
@@ -142,11 +137,10 @@ def motionToGoal(goal_dist):
             rotationInPlace('right', pi/60, 0.9)
             return
         # pid logic
-        # print(f'dist sensor: {lidar.getRangeImage()[0]*39.3701}, camera: {distToObject()}') # debug
         error = distToObject() - goal_dist
         v = (2*error) # 2 == kp value
         v = v_saturation(v, 5.024)
-        if abs(error) < 0.1:    # stop motors if 0.1in awa from goal
+        if abs(error) < 0.1:    # stop motors if 5 +- 0.1in away from goal
             setSpeedIPS(0, 0)
         else:
             setSpeedIPS(v, v)
@@ -160,6 +154,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# 1.78
