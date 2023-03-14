@@ -271,7 +271,6 @@ def main():
 
             # else try to find goal
             found = findGoal()  
-            print(found)
             if found:
                 print(f'Motion to Goal\t\t\tTime: {robot.getTime():.2f}') 
                 MG, WF = True, False
