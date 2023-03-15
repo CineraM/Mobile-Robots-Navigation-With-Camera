@@ -1,4 +1,4 @@
-# Robotic Motion Planning - Bug-Zero Webots implementation with Lidar & Camera  
+# Robotic Motion Planning - Bug-Zero Webots Implementation with Lidar & Camera  
 Webots (E-puck): Python implementation of Bug-Zero, Motion to goal, & Wall follow  
 
 ### Dependencies 
